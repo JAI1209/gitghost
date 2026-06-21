@@ -1,6 +1,6 @@
-const Anthropic = require('@anthropic-ai/sdk');
+const Groq = require('groq-sdk');
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 function profileToText(profile) {
   if (!profile) return 'No style profile available yet.';
@@ -19,20 +19,19 @@ function profileToText(profile) {
 }
 
 async function generateStyleSummary(profile) {
-  // Temporary mock — add Anthropic credits to enable AI summary
   try {
-    const msg = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+    const completion = await client.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       max_tokens: 300,
       messages: [{
         role: 'user',
         content: `Based on these coding style metrics, write a 2-3 sentence plain-English description of this developer's coding style fingerprint:\n\n${profileToText(profile)}\n\nBe specific and concrete. Mention naming conventions, preferences, and any notable patterns.`,
       }],
     });
-    return msg.content[0].text;
+    return completion.choices[0].message.content;
   } catch (err) {
-    console.warn('⚠️  Claude API unavailable, using mock summary:', err.message);
-    return `Developer uses ${profile?.namingConventions?.functions || 'standard'} naming conventions with an average function length of ${profile?.avgFunctionLength || 'unknown'} lines. Quote style: ${profile?.quoteStyle || 'unknown'}. Semicolons: ${profile?.semicolonUsage || 'unknown'}.`;
+    console.warn('⚠️ Groq API error:', err.message);
+    return `Developer uses ${profile?.namingConventions?.functions || 'standard'} naming with avg function length of ${profile?.avgFunctionLength || 'unknown'} lines. Quote style: ${profile?.quoteStyle || 'unknown'}. Semicolons: ${profile?.semicolonUsage || 'unknown'}.`;
   }
 }
 
@@ -43,47 +42,43 @@ async function reviewPRDiff(styleProfile, prFiles, prTitle = '') {
     return `${header}\n\`\`\`diff\n${patch}\n\`\`\``;
   }).join('\n\n').slice(0, 12000);
 
-  const systemPrompt = `You are GitGhost, a personal AI code reviewer. Your job is to review code changes ONLY against the developer's personal coding style — not general best practices.
+  const systemPrompt = `You are GitGhost, a personal AI code reviewer. Review code changes ONLY against the developer's personal coding style — not general best practices.
 
 The developer's style fingerprint:
 ${profileToText(styleProfile)}
 
 Rules:
-- ONLY flag deviations from THIS developer's own style — not general "best practices"
-- If they always use camelCase and the PR uses snake_case, flag it
-- If they always use semicolons and this PR doesn't, flag it
-- Do NOT suggest improvements unless they contradict the developer's own patterns
-- Be specific: reference the style profile data when explaining issues
-- Tone: like a friendly colleague who knows the codebase well
+- ONLY flag deviations from THIS developer's own style
+- Be specific: reference the style profile data
+- Tone: friendly colleague who knows the codebase
 
 Respond ONLY with valid JSON:
 {
   "summary": "Overall review summary (2-3 sentences)",
-  "driftScore": <0-100, where 100 = perfectly consistent with style>,
+  "driftScore": <0-100, where 100 = perfectly consistent>,
   "comments": [
     {
       "file": "path/to/file.js",
-      "line": <line number in diff>,
+      "line": <line number>,
       "type": "naming|style|pattern|structure|suggestion",
       "severity": "info|warning|error",
       "message": "What's inconsistent and why",
       "suggestion": "What to do instead",
-      "pastExample": "Optional: reference to how they've done it before"
+      "pastExample": "Optional reference"
     }
   ]
 }`;
 
-  const msg = await client.messages.create({
-    model: 'claude-sonnet-4-6',
+  const completion = await client.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
     max_tokens: 2000,
-    system: systemPrompt,
-    messages: [{
-      role: 'user',
-      content: `PR Title: "${prTitle}"\n\nFiles changed:\n${diffText}`,
-    }],
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: `PR Title: "${prTitle}"\n\nFiles changed:\n${diffText}` }
+    ],
   });
 
-  const raw = msg.content[0].text;
+  const raw = completion.choices[0].message.content;
   try {
     const clean = raw.replace(/```json|```/g, '').trim();
     return JSON.parse(clean);

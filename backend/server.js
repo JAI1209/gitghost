@@ -6,10 +6,6 @@ const passport = require('passport');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
-const dns = require('node:dns');
-
-// Force Node to use Cloudflare + Google DNS (remove in production)
-dns.setServers(['1.1.1.1', '8.8.8.8']);
 
 const authRoutes = require('./routes/auth');
 const repoRoutes = require('./routes/repos');
@@ -17,15 +13,15 @@ const reviewRoutes = require('./routes/reviews');
 const webhookRoutes = require('./routes/webhooks');
 const dashboardRoutes = require('./routes/dashboard');
 
-require('./config/passport');
+const dns = require ('node:dns');
+// Force Node to use Cloudflare and Google DNS to bypass local SRV block
+dns.setServers(['1.1.1.1', '8.8.8.8']); // Cloudflare and Google DNS Remove it in Production 
 
-// Workers — load only if Redis is available
-try {
-  require('./workers/scanWorker');
-  require('./workers/reviewWorker');
-} catch (err) {
-  console.warn('⚠️  Workers not started (Redis unavailable):', err.message);
-}
+
+
+require('./config/passport');
+require('./workers/scanWorker');
+require('./workers/reviewWorker');
 
 const app = express();
 
@@ -48,14 +44,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'gitghostsecret',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI }),
-  cookie: { 
-    secure: process.env.NODE_ENV === 'production', 
-    maxAge: 7 * 24 * 60 * 60 * 1000 
-  }
+  cookie: { secure: process.env.NODE_ENV === 'production', maxAge: 7 * 24 * 60 * 60 * 1000 }
 }));
 
 app.use(passport.initialize());
