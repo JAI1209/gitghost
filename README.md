@@ -1,179 +1,188 @@
-# 👻 GitGhost — Your Personal AI Code Reviewer
+<div align="center">
 
-> "GitHub Copilot knows code. GitGhost knows **you**."
+<img src="assets/logo.png" alt="GitGhost" width="140"/>
 
-GitGhost learns your personal coding style from your GitHub repos and reviews every PR like *you* would — catching naming drift, pattern violations, and architectural inconsistencies in real-time.
+# GitGhost 👻
 
----
+**The AI code reviewer that knows YOU.**
 
-## 🗂 Project Structure
+*GitHub Copilot knows code. GitGhost knows your style.*
 
-```
-gitghost/
-├── backend/          # Node.js + Express API
-│   ├── config/       # Passport OAuth config
-│   ├── middleware/   # Auth guard
-│   ├── models/       # Mongoose schemas (User, Repo, Review)
-│   ├── routes/       # auth, repos, reviews, webhooks, dashboard
-│   ├── services/     # GitHub API, AST fingerprinter, Claude reviewer
-│   ├── workers/      # BullMQ scan + review workers
-│   └── server.js
-└── frontend/         # React + Vite + Tailwind
-    └── src/
-        ├── pages/    # Landing, Login, Dashboard, Repos, ReviewDetail
-        ├── components/ # Layout, Sidebar
-        ├── hooks/    # useAuth
-        └── utils/    # axios instance
-```
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=node.js&logoColor=white)
+![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white)
+![GitHub OAuth](https://img.shields.io/badge/GitHub_OAuth-181717?style=flat&logo=github&logoColor=white)
+![Groq](https://img.shields.io/badge/Groq_AI-F55036?style=flat&logo=groq&logoColor=white)
+
+</div>
 
 ---
 
-## ⚙️ Prerequisites
+## What is GitGhost?
 
-- Node.js 18+
-- MongoDB (local or Atlas)
-- Redis (local or Upstash)
-- GitHub OAuth App
-- Anthropic API key
+GitGhost is an AI-powered personal code reviewer that **learns your coding style** from your GitHub repositories and automatically reviews every PR — not against generic best practices, but against **your own patterns**.
+
+> *"You use camelCase. You prefer arrow functions. You never use semicolons. GitGhost knows this — and flags when you drift."*
 
 ---
 
-## 🚀 Setup — Step by Step
+## How It Works
 
-### 1. Clone & install
 
+You connect your GitHub repo
+
+↓
+
+GitGhost scans your codebase (AST analysis)
+
+↓
+
+Builds your personal Style Fingerprint
+
+↓
+
+You open a PR on GitHub
+
+↓
+
+GitGhost webhook fires automatically
+
+↓
+
+AI reviews your PR against YOUR style
+
+↓
+
+👻 Review comment posted on GitHub PR ✅
+
+
+---
+
+## Features
+
+- 🔐 **GitHub OAuth** — one-click login, zero friction
+- 🧠 **Style Fingerprinting** — AST-level analysis of your naming conventions, patterns, and architecture
+- 👻 **Auto PR Reviews** — webhook-triggered, zero manual effort
+- 📊 **Drift Score** — 0-100 style consistency score per PR
+- ⚡ **Async Job Queue** — BullMQ + Redis for background processing
+- 🎯 **Personal, not generic** — reviews YOUR code like YOU would
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | React + Vite + Tailwind CSS |
+| Backend | Node.js + Express |
+| AI Engine | Groq API (Llama 3.3 70B) |
+| Database | MongoDB Atlas |
+| Auth | GitHub OAuth 2.0 |
+| Webhooks | GitHub Webhooks |
+| Queue | BullMQ + Redis (Upstash) |
+| AST Parsing | @babel/parser |
+
+---
+
+## Live Demo
+
+> Connect your GitHub → Select a repo → Open a PR → Watch GitGhost review it in your own style.
+
+---
+
+## Setup & Installation
+
+### 1. Clone
 ```bash
-# Backend
-cd backend
-npm install
-
-# Frontend
-cd ../frontend
-npm install
+git clone https://github.com/JAI1209/gitghost.git
+cd gitghost
 ```
 
-### 2. Create a GitHub OAuth App
-
-1. Go to **GitHub → Settings → Developer Settings → OAuth Apps → New OAuth App**
-2. Set:
-   - **Homepage URL**: `http://localhost:3000`
-   - **Authorization callback URL**: `http://localhost:5000/auth/github/callback`
-3. Copy **Client ID** and **Client Secret**
-
-### 3. Configure backend environment
-
+### 2. Install
 ```bash
-cd backend
-cp .env.example .env
+cd backend && npm install
+cd ../frontend && npm install
 ```
 
-Fill in `.env`:
+### 3. Environment Variables
+```bash
+cp backend/.env.example backend/.env
+```
 
 ```env
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/gitghost
-GITHUB_CLIENT_ID=<from step 2>
-GITHUB_CLIENT_SECRET=<from step 2>
-GITHUB_CALLBACK_URL=http://localhost:5000/auth/github/callback
-GITHUB_WEBHOOK_SECRET=any_random_string_you_choose
-ANTHROPIC_API_KEY=sk-ant-...
-SESSION_SECRET=another_random_long_string
-JWT_SECRET=yet_another_random_string
-REDIS_URL=redis://localhost:6379
+MONGODB_URI=your_mongodb_atlas_uri
+GITHUB_CLIENT_ID=your_github_oauth_client_id
+GITHUB_CLIENT_SECRET=your_github_oauth_client_secret
+GROQ_API_KEY=your_groq_api_key
+REDIS_URL=your_upstash_redis_url
+SESSION_SECRET=any_random_string
+JWT_SECRET=any_random_string
+GITHUB_WEBHOOK_SECRET=any_random_string
 FRONTEND_URL=http://localhost:3000
-BACKEND_URL=https://your-public-url.com   # needed for webhook registration
+BACKEND_URL=https://your-ngrok-url
 ```
 
-### 4. Start services
-
+### 4. Run
 ```bash
-# Terminal 1 — MongoDB (if local)
-mongod
+# Terminal 1 — Backend
+cd backend && npm run dev
 
-# Terminal 2 — Redis (if local)
-redis-server
+# Terminal 2 — Frontend
+cd frontend && npm run dev
 
-# Terminal 3 — Backend
-cd backend
-npm run dev
-
-# Terminal 4 — Frontend
-cd frontend
-npm run dev
-```
-
-Open **http://localhost:3000**
-
----
-
-## 🔗 GitHub Webhooks (for PR auto-review)
-
-GitGhost registers webhooks automatically when you connect a repo. For this to work during local development, your backend needs a public URL. Use **ngrok**:
-
-```bash
-# Install ngrok, then:
+# Terminal 3 — ngrok
 ngrok http 5000
 ```
 
-Set `BACKEND_URL=https://xxxx.ngrok.io` in your `.env` and restart the backend.
+### 5. GitHub Webhook Setup
+- Repo → Settings → Webhooks → Add webhook
+- Payload URL: `https://your-ngrok-url/webhooks/github`
+- Content type: `application/json`
+- Secret: same as `GITHUB_WEBHOOK_SECRET`
+- Events: **Pull requests** + **Pushes**
 
 ---
 
-## 📋 What YOU Need to Do After Setup
+## Project Structure
 
-These parts require your manual configuration or external services:
 
-| Task | What to do |
-|------|-----------|
-| **GitHub OAuth App** | Create at github.com/settings/developers |
-| **Anthropic API Key** | Get at console.anthropic.com |
-| **MongoDB** | Use local install or MongoDB Atlas (free tier) |
-| **Redis** | Use local install or Upstash (free tier at upstash.com) |
-| **Public URL for webhooks** | Use ngrok locally, or deploy backend to Render/Railway |
-| **Domain for production** | Deploy frontend to Vercel/Netlify, backend to Render |
+gitghost/
 
----
+├── backend/
 
-## 🌐 Production Deployment
+│   ├── config/          # Passport OAuth config
 
-### Backend → Render (free tier)
-1. Push code to GitHub
-2. Create a new **Web Service** on render.com
-3. Set all environment variables
-4. Deploy
+│   ├── middleware/       # Auth middleware
 
-### Frontend → Vercel
-1. Push frontend to GitHub
-2. Import to vercel.com
-3. Set `VITE_API_URL` if needed (defaults to same origin via proxy)
+│   ├── models/           # MongoDB schemas
 
----
+│   ├── routes/           # API routes
 
-## 💰 Pricing Plans (built-in)
+│   ├── services/         # GitHub API, AI, AST
 
-| Plan | Price | Repos | Reviews/month |
-|------|-------|-------|---------------|
-| Free | ₹0 | 1 | 50 |
-| Pro | ₹499/mo | 10 | Unlimited |
-| Team | ₹1999/mo | Unlimited | Unlimited |
+│   └── workers/          # BullMQ job workers
 
-*(Enforcement logic can be added in the review worker's plan check)*
+└── frontend/
+
+└── src/
+
+├── pages/        # Dashboard, Repos, Reviews
+
+└── components/   # UI components
+
+
 
 ---
 
-## 🔧 Tech Stack
+## Built By
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React + Vite + Tailwind CSS |
-| Backend | Node.js + Express |
-| Auth | Passport.js + GitHub OAuth 2.0 |
-| Database | MongoDB + Mongoose |
-| AI Engine | Claude API (claude-sonnet-4-6) |
-| Job Queue | BullMQ + Redis |
-| AST Parsing | @babel/parser + @babel/traverse |
-| Webhooks | GitHub Webhooks |
+<div align="center">
 
----
+**Jai Surya Kumar**
 
-Built by **Jai Surya Kumar** · [GitHub](https://github.com/JAI1209) · [Portfolio](https://jaiportfolioreact.netlify.app)
+[GitHub](https://github.com/JAI1209) · [Portfolio](https://jaiportfolioreact.netlify.app) · [LinkedIn](https://linkedin.com/in/jai-surya-kumar)
+
+*Digital Krantikari 🚀*
+
+</div>
