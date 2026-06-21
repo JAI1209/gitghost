@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/logo.png" alt="GitGhost" width="140"/>
+<img src="assets/1.png" alt="GitGhost" width="140"/>
 
 # GitGhost 👻
 
