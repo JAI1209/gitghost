@@ -1,7 +1,7 @@
 <div align="center">
 
 <img src="gitghost\assets\1.png" alt="GitGhost" width="140"/>
-
+gitghost/assets/1.png
 # GitGhost 👻
 
 **The AI code reviewer that knows YOU.**
