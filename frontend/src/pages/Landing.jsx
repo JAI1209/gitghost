@@ -66,7 +66,7 @@ export default function Landing() {
       {/* Quote */}
       <div className="border-t border-ghost-border text-center py-12 px-8">
         <p className="text-ghost-text-dim text-sm font-mono">
-          "The best way to stand out is to build something that makes people ask — <span className="text-ghost-accent">wait, how did you do that?</span>"
+          "Every commit tells a story. — <span className="text-ghost-accent">GitGhost tracks what your commits don't say.</span>"
         </p>
         <p className="text-ghost-text-dim/50 text-xs mt-3">— Jai Surya Kumar, GitGhost</p>
       </div>
