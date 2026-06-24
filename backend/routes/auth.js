@@ -13,9 +13,11 @@ router.get(
     failureRedirect: `${process.env.FRONTEND_URL}/login?error=auth_failed`,
   }),
   (req, res) => {
+    console.log('================================');
     console.log('AUTHENTICATED USER:', req.user);
     console.log('SESSION ID:', req.sessionID);
     console.log('IS AUTH:', req.isAuthenticated());
+    console.log('================================');
 
     req.session.save((err) => {
       if (err) {
@@ -24,6 +26,8 @@ router.get(
           `${process.env.FRONTEND_URL}/login?error=session`
         );
       }
+
+      console.log('SESSION SAVED SUCCESSFULLY');
 
       res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
     });
