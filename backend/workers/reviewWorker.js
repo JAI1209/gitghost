@@ -5,11 +5,10 @@ const Review = require('../models/Review');
 const User = require('../models/User');
 const { getPRDiff, postPRReview } = require('../services/githubService');
 const { reviewPRDiff } = require('../services/claudeService');
-
+const { sendReviewCompleteEmail } = require('../services/emailService');
 
 const dns = require('node:dns');
 dns.setServers(['1.1.1.1', '8.8.8.8']);
-
 
 const connection = new IORedis(process.env.REDIS_URL || 'redis://localhost:6379', {
   maxRetriesPerRequest: null,
@@ -34,15 +33,12 @@ const worker = new Worker('review-pr', async (job) => {
   try {
     const [owner, repoName] = repo.fullName.split('/');
 
-    // Get PR diff from GitHub
     const { pr, files } = await getPRDiff(user.accessToken, owner, repoName, review.prNumber);
     job.updateProgress(30);
 
-    // Call Claude for review
     const result = await reviewPRDiff(repo.styleProfile, files, pr.title);
     job.updateProgress(80);
 
-    // Post review to GitHub
     let githubCommentId = null;
     try {
       const ghReview = await postPRReview(
@@ -55,7 +51,6 @@ const worker = new Worker('review-pr', async (job) => {
       console.warn('⚠️  Could not post to GitHub:', ghErr.message);
     }
 
-    // Save review results
     await Review.findByIdAndUpdate(reviewId, {
       status: 'complete',
       driftScore: result.driftScore,
@@ -67,7 +62,7 @@ const worker = new Worker('review-pr', async (job) => {
       processingTimeMs: Date.now() - start,
     });
 
-    // Update repo drift score (rolling average)
+    // Update repo drift score
     const reviews = await Review.find({ repoId: repo._id, status: 'complete' }).sort({ createdAt: -1 }).limit(10);
     const avgDrift = Math.round(reviews.reduce((acc, r) => acc + (r.driftScore || 100), 0) / reviews.length);
     await Repo.findByIdAndUpdate(repo._id, {
@@ -75,10 +70,22 @@ const worker = new Worker('review-pr', async (job) => {
       $inc: { totalReviews: 1 },
     });
 
-    // Increment user review count
     await User.findByIdAndUpdate(user._id, { $inc: { reviewsThisMonth: 1 } });
 
     console.log(`✅ Review ${reviewId} complete — drift score: ${result.driftScore}`);
+
+    // Send email notification
+    if (user.email) {
+      sendReviewCompleteEmail({
+        to: user.email,
+        username: user.username,
+        prTitle: pr.title,
+        prUrl: pr.html_url,
+        driftScore: result.driftScore,
+        repoName: repo.fullName,
+      }).catch(err => console.warn('📧 Email failed:', err.message));
+    }
+
     return { success: true, driftScore: result.driftScore };
   } catch (err) {
     await Review.findByIdAndUpdate(reviewId, { status: 'error' });

@@ -6,7 +6,7 @@ const passport = require('passport');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
-
+const profileRouter = require('./routes/profile');
 const authRoutes = require('./routes/auth');
 const repoRoutes = require('./routes/repos');
 const reviewRoutes = require('./routes/reviews');
@@ -81,6 +81,7 @@ app.use(passport.session());
 app.use('/auth', authRoutes);
 app.use('/api/repos', repoRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/profile', profileRouter);
 app.use('/api/dashboard', dashboardRoutes);
 
 // Health Check

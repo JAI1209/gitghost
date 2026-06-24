@@ -1,10 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Ghost, LayoutDashboard, GitBranch, LogOut, User } from 'lucide-react';
+import { Ghost, LayoutDashboard, GitBranch, LogOut, User, ClipboardList } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 const nav = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/repos', label: 'Repositories', icon: GitBranch },
+  { to: '/reviews', label: 'Reviews', icon: ClipboardList },
 ];
 
 export default function Layout({ children }) {
@@ -13,15 +14,12 @@ export default function Layout({ children }) {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
       <aside className="w-60 shrink-0 flex flex-col border-r border-ghost-border bg-ghost-card">
-        {/* Logo */}
         <div className="flex items-center gap-2 px-5 py-5 border-b border-ghost-border">
           <Ghost className="text-ghost-accent" size={22} />
           <span className="font-semibold text-ghost-text tracking-tight">GitGhost</span>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-1">
           {nav.map(({ to, label, icon: Icon }) => (
             <Link
@@ -39,7 +37,6 @@ export default function Layout({ children }) {
           ))}
         </nav>
 
-        {/* User footer */}
         {user && (
           <div className="border-t border-ghost-border p-3">
             <div className="flex items-center gap-3 px-2 py-2">
@@ -58,7 +55,6 @@ export default function Layout({ children }) {
         )}
       </aside>
 
-      {/* Main content */}
       <main className="flex-1 overflow-y-auto bg-ghost-bg">
         {children}
       </main>

@@ -55,10 +55,15 @@ export default function ReviewDetail() {
   const warnings = review.comments?.filter(c => c.severity === 'warning') || [];
   const infos = review.comments?.filter(c => c.severity === 'info') || [];
 
+  const typeCounts = ['naming', 'style', 'pattern', 'structure', 'suggestion']
+    .map(t => ({ type: t, count: review.comments?.filter(c => c.type === t).length || 0 }))
+    .filter(t => t.count > 0);
+  const maxCount = Math.max(...typeCounts.map(c => c.count), 1);
+
   return (
     <div className="p-8 max-w-4xl mx-auto">
-      <Link to="/dashboard" className="flex items-center gap-2 text-ghost-text-dim hover:text-ghost-text text-sm mb-6 transition-colors">
-        <ArrowLeft size={14} /> Back to Dashboard
+      <Link to="/reviews" className="flex items-center gap-2 text-ghost-text-dim hover:text-ghost-text text-sm mb-6 transition-colors">
+        <ArrowLeft size={14} /> Back to Reviews
       </Link>
 
       {/* Header */}
@@ -93,6 +98,27 @@ export default function ReviewDetail() {
         </div>
       )}
 
+      {/* Type Breakdown */}
+      {typeCounts.length > 0 && (
+        <div className="card p-5 mb-6">
+          <p className="text-xs text-ghost-text-dim font-mono uppercase mb-4">Comment breakdown</p>
+          <div className="space-y-2.5">
+            {typeCounts.map(({ type, count }) => (
+              <div key={type} className="flex items-center gap-3">
+                <span className="text-xs text-ghost-text-dim w-20 capitalize">{type}</span>
+                <div className="flex-1 bg-ghost-border/30 rounded-full h-1.5">
+                  <div
+                    className="bg-ghost-accent h-1.5 rounded-full transition-all"
+                    style={{ width: `${(count / maxCount) * 100}%` }}
+                  />
+                </div>
+                <span className="text-xs text-ghost-text-dim w-4 text-right">{count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Comment stats */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         {[
@@ -117,10 +143,10 @@ export default function ReviewDetail() {
       ) : (
         <div>
           <h2 className="font-semibold text-sm text-ghost-text-dim uppercase tracking-wider mb-3">
-            Style Comments ({review.comments.length})
+            Style Comments ({review.comments?.length})
           </h2>
           <div className="space-y-3">
-            {review.comments.map((c, i) => <Comment key={i} c={c} />)}
+            {review.comments?.map((c, i) => <Comment key={i} c={c} />)}
           </div>
         </div>
       )}
