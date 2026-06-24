@@ -32,9 +32,14 @@ export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    api.get('/dashboard').then(r => setData(r.data)).finally(() => setLoading(false));
-  }, []);
+useEffect(() => {
+  api.get('/dashboard')
+    .then((r) => setData(r.data))
+    .catch((err) => {
+      console.error(err);
+    })
+    .finally(() => setLoading(false));
+}, []);
 
   if (loading) return <div className="p-8 text-ghost-text-dim text-sm">Loading dashboard…</div>;
 
