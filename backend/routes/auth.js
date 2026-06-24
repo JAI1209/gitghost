@@ -7,10 +7,26 @@ router.get('/github', passport.authenticate('github', {
 }));
 
 // GitHub OAuth callback
-router.get('/github/callback',
-  passport.authenticate('github', { failureRedirect: `${process.env.FRONTEND_URL}/login?error=auth_failed` }),
+router.get(
+  '/github/callback',
+  passport.authenticate('github', {
+    failureRedirect: `${process.env.FRONTEND_URL}/login?error=auth_failed`,
+  }),
   (req, res) => {
-    res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+    console.log('AUTHENTICATED USER:', req.user);
+    console.log('SESSION ID:', req.sessionID);
+    console.log('IS AUTH:', req.isAuthenticated());
+
+    req.session.save((err) => {
+      if (err) {
+        console.error('SESSION SAVE ERROR:', err);
+        return res.redirect(
+          `${process.env.FRONTEND_URL}/login?error=session`
+        );
+      }
+
+      res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+    });
   }
 );
 
